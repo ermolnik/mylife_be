@@ -1,0 +1,50 @@
+###
+POST http://127.0.0.1:8080/wallet
+Content-Type: application/json;charset=utf-8
+
+{
+  "id": "1",
+  "relevanceTime": 100,
+  "dateCreated": 100,
+  "currency": null,
+  "accounts": null
+}
+
+
+
+###
+POST http://127.0.0.1:8080/cities
+Content-Type: application/json;charset=utf-8
+
+{
+  "name": "Spain",
+  "population": 100
+}
+
+###
+POST http://127.0.0.1:8080/incomes
+Content-Type: application/json;charset=utf-8
+
+{
+  "category": {
+    "id": "2",
+    "title": "title",
+    "emoji": "emoji",
+    "isSystem": false,
+    "isVisible": false,
+    "order": 1
+  },
+  "accountId": "2",
+  "value": 100,
+  "valueInMainCurrency": 100,
+  "note": "note",
+  "date": 100
+}
+
+###
+GET http://127.0.0.1:8080/cities/1
+Content-Type: application/json;charset=utf-8
+
+###
+GET http://127.0.0.1:8080/incomes/1
+Content-Type: application/json;charset=utf-8
