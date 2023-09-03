@@ -3,9 +3,8 @@ package ru.ermolnik
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
-import ru.ermolnik.plugins.configureDatabases
-import ru.ermolnik.plugins.configureRouting
-import ru.ermolnik.plugins.configureSecurity
+import ru.ermolnik.models.exposedb.*
+import ru.ermolnik.plugins.*
 import ru.ermolnik.plugins.configureSerialization
 
 fun main() {
@@ -14,8 +13,13 @@ fun main() {
 }
 
 fun Application.module() {
+    configureExposeDatabase()
     configureSerialization()
     configureDatabases()
     configureSecurity()
     configureRouting()
+
+    incomeRoutes(IncomeDAOImpl())
+    purchaseRoutes(PurchaseDAOImpl())
+    walletRoutes(WalletDAOImpl())
 }

@@ -13,73 +13,7 @@ import java.sql.DriverManager
 
 fun Application.configureDatabases() {
     val dbConnection: Connection = connectToPostgres()
-    incomeRoutes(dbConnection)
-    purchaseRoutes(dbConnection)
     walletRoutes(dbConnection)
-}
-
-fun Application.incomeRoutes(connection: Connection) {
-    val incomeService = IncomeService(connection)
-    routing {
-
-        post("/incomes") {
-            val income = call.receive<Income>()
-            val id = incomeService.create(income)
-            call.respond(HttpStatusCode.Created, id)
-        }
-        get("/incomes/{id}") {
-            val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
-            try {
-                val income = incomeService.read(id)
-                call.respond(HttpStatusCode.OK, income)
-            } catch (e: Exception) {
-                call.respond(HttpStatusCode.NotFound)
-            }
-        }
-        put("/incomes/{id}") {
-            val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
-            val income = call.receive<Income>()
-            incomeService.update(id, income)
-            call.respond(HttpStatusCode.OK)
-        }
-        delete("/incomes/{id}") {
-            val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
-            incomeService.delete(id)
-            call.respond(HttpStatusCode.OK)
-        }
-    }
-}
-
-fun Application.purchaseRoutes(connection: Connection) {
-    val purchaseService = PurchaseService(connection)
-    routing {
-
-        post("/purchases") {
-            val purchase = call.receive<Purchase>()
-            val id = purchaseService.create(purchase)
-            call.respond(HttpStatusCode.Created, id)
-        }
-        get("/purchases/{id}") {
-            val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
-            try {
-                val purchase = purchaseService.read(id)
-                call.respond(HttpStatusCode.OK, purchase)
-            } catch (e: Exception) {
-                call.respond(HttpStatusCode.NotFound)
-            }
-        }
-        put("/purchases/{id}") {
-            val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
-            val purchase = call.receive<Purchase>()
-            purchaseService.update(id, purchase)
-            call.respond(HttpStatusCode.OK)
-        }
-        delete("/incomes/{id}") {
-            val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
-            purchaseService.delete(id)
-            call.respond(HttpStatusCode.OK)
-        }
-    }
 }
 
 fun Application.walletRoutes(connection: Connection) {
