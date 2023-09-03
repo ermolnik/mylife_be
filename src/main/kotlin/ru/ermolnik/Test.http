@@ -26,6 +26,7 @@ POST http://127.0.0.1:8080/incomes
 Content-Type: application/json;charset=utf-8
 
 {
+  "id": 1,
   "category": {
     "id": "2",
     "title": "title",
