@@ -15,7 +15,6 @@ fun main() {
 fun Application.module() {
     configureExposeDatabase()
     configureSerialization()
-    configureDatabases()
     configureSecurity()
     configureRouting()
 
