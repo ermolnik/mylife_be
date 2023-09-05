@@ -1,0 +1,1 @@
+docker build -t my-life . && docker run -p 8080:8080 my-life
