@@ -1,4 +1,4 @@
-package ru.ermolnik.models.exposedb
+package ru.ermolnik.models
 
 import io.ktor.http.*
 import io.ktor.server.application.*

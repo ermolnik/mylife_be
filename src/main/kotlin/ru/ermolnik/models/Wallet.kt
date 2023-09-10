@@ -1,37 +1,32 @@
 package ru.ermolnik.models
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
-import java.sql.Connection
-import java.sql.Statement
+import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import ru.ermolnik.plugins.dbQuery
 
-/*
- *  Модель, описывающая кошелёк
- */
 @Serializable
 data class Wallet(
-    val id: String = "1",
+    val id: Int,
     val relevanceTime: Long,
     val dateCreated: Long,
     val currency: Currency,
     val accounts: List<WalletAccount> = listOf()
 )
 
-/*
- *  Модель, описывающая валюту
- */
 @Serializable
 data class Currency(
-    val id: String,
+    val id: Int,
     val title: String,
     val symbol: String,
     val charCode: String
 )
 
-/*
- *  Модель, описывающая счет в кошельке
- */
 @Serializable
 data class WalletAccount(
     val id: String,
@@ -46,94 +41,115 @@ data class WalletAccount(
     val dateCreated: Long
 )
 
-/*
- *  Тип счета в кошельке
- */
 @Serializable
-enum class WalletAccountType {
-    BUDGET,
-    SAVINGS
+enum class WalletAccountType(name: String) {
+    BUDGET("BUDGET"),
+    SAVINGS("SAVINGS")
 }
 
+object WalletDB : Table() {
 
-class WalletService(private val connection: Connection) {
-    companion object {
-        private const val CREATE_TABLE_WALLET =
-            "CREATE TABLE IF NOT EXISTS WALLETS (ID SERIAL PRIMARY KEY, WALLET_RELEVANCE_TIME BIGINT, WALLET_DATE_CREATED BIGINT, WALLET_CURRENCY_ID VARCHAR(255), WALLET_CURRENCY_TITLE VARCHAR(255), WALLET_CURRENCY_SYMBOL VARCHAR(255), WALLET_CURRENCY_CHAR_CODE VARCHAR(255));"
-        private const val SELECT_WALLET_BY_ID =
-            "SELECT WALLET_RELEVANCE_TIME, WALLET_DATE_CREATED, WALLET_CURRENCY_ID, WALLET_CURRENCY_TITLE, WALLET_CURRENCY_SYMBOL, WALLET_CURRENCY_CHAR_CODE FROM cities WHERE id = ?"
-        private const val INSERT_WALLET =
-            "INSERT INTO WALLETS (WALLET_RELEVANCE_TIME, WALLET_DATE_CREATED, WALLET_CURRENCY_ID, WALLET_CURRENCY_TITLE, WALLET_CURRENCY_SYMBOL, WALLET_CURRENCY_CHAR_CODE) VALUES (?, ?, ?, ?, ?, ?)"
-        private const val UPDATE_WALLET =
-            "UPDATE WALLETS SET WALLET_RELEVANCE_TIME = ?, WALLET_DATE_CREATED = ?, WALLET_CURRENCY_ID = ?, WALLET_CURRENCY_TITLE = ?, WALLET_CURRENCY_SYMBOL = ?, WALLET_CURRENCY_CHAR_CODE = ? WHERE id = ?"
-        private const val DELETE_WALLET = "DELETE FROM WALLETS WHERE id = ?"
+    val id = integer("id").autoIncrement()
+    val relevanceTime = long("relevanceTime")
+    val dateCreated = long("dateCreated")
+    val currencyId = integer("currencyId")
+    val currencyTitle = varchar("currencyTitle", 1024)
+    val currencySymbol = varchar("categoryIsVisible", 1024)
+    val currencyCharCode = varchar("currencyCharCode", 1024)
 
+    override val primaryKey = PrimaryKey(id)
+}
+
+interface WalletDAO {
+    suspend fun allWallet(): List<Wallet>
+    suspend fun wallet(id: Int): Wallet?
+    suspend fun addNewWallet(wallet: Wallet): Wallet?
+    suspend fun editWallet(id: Int, wallet: Wallet): Boolean
+    suspend fun deleteWallet(id: Int): Boolean
+}
+
+class WalletDAOImpl : WalletDAO {
+
+    private fun resultRowToWallet(row: ResultRow) = Wallet(
+        id = row[WalletDB.id],
+        relevanceTime = row[WalletDB.relevanceTime],
+        dateCreated = row[WalletDB.dateCreated],
+        currency = Currency(
+            id = row[WalletDB.currencyId],
+            title = row[WalletDB.currencyTitle],
+            symbol = row[WalletDB.currencySymbol],
+            charCode = row[WalletDB.currencyCharCode],
+        ),
+    )
+
+    override suspend fun allWallet(): List<Wallet> = dbQuery {
+        IncomeDB.selectAll().map(::resultRowToWallet)
     }
 
-    init {
-        val statement = connection.createStatement()
-        statement.executeUpdate(CREATE_TABLE_WALLET)
+    override suspend fun wallet(id: Int): Wallet? = dbQuery {
+        IncomeDB
+            .select { WalletDB.id eq id }
+            .map(::resultRowToWallet)
+            .singleOrNull()
     }
 
-    // Create new city
-    suspend fun create(wallet: Wallet): Int = withContext(Dispatchers.IO) {
-        val statement = connection.prepareStatement(INSERT_WALLET, Statement.RETURN_GENERATED_KEYS)
-        statement.setLong(1, wallet.relevanceTime)
-        statement.setLong(2, wallet.dateCreated)
-        statement.setString(3, wallet.currency.id)
-        statement.setString(4, wallet.currency.title)
-        statement.setString(5, wallet.currency.symbol)
-        statement.setString(6, wallet.currency.charCode)
-        statement.executeUpdate()
-
-        val generatedKeys = statement.generatedKeys
-        if (generatedKeys.next()) {
-            return@withContext generatedKeys.getInt(1)
-        } else {
-            throw Exception("Unable to retrieve the id of the newly inserted city")
+    override suspend fun addNewWallet(wallet: Wallet): Wallet? = dbQuery {
+        val insertStatement = WalletDB.insert {
+            it[relevanceTime] = wallet.relevanceTime
+            it[dateCreated] = wallet.dateCreated
+            it[currencyId] = wallet.currency.id
+            it[currencySymbol] = wallet.currency.symbol
+            it[currencyCharCode] = wallet.currency.charCode
         }
+        insertStatement.resultedValues?.singleOrNull()?.let(::resultRowToWallet)
     }
 
-    // Read a city
-    suspend fun read(id: Int): Wallet = withContext(Dispatchers.IO) {
-        val statement = connection.prepareStatement(SELECT_WALLET_BY_ID)
-        statement.setInt(1, id)
-        val resultSet = statement.executeQuery()
-        if (resultSet.next()) {
-            val walletRelevanceTime = resultSet.getLong("WALLET_RELEVANCE_TIME")
-            val walletDateCreated = resultSet.getLong("WALLET_DATE_CREATED")
-            val walletCurrencyId = resultSet.getString("WALLET_CURRENCY_ID")
-            val walletCurrencyTitle = resultSet.getString("WALLET_CURRENCY_TITLE")
-            val walletCurrencySymbol = resultSet.getString("WALLET_CURRENCY_SYMBOL")
-            val walletCurrencyCharCode = resultSet.getString("WALLET_CURRENCY_CHAR_CODE")
-            return@withContext Wallet(
-                "1",
-                walletRelevanceTime,
-                walletDateCreated,
-                Currency(walletCurrencyId, walletCurrencyTitle, walletCurrencySymbol, walletCurrencyCharCode)
-            )
-        } else {
-            throw Exception("Record not found")
+    override suspend fun editWallet(id: Int, wallet: Wallet): Boolean = dbQuery {
+        WalletDB.update({ WalletDB.id eq id }) {
+            it[relevanceTime] = wallet.relevanceTime
+            it[dateCreated] = wallet.dateCreated
+            it[currencyId] = wallet.currency.id
+            it[currencySymbol] = wallet.currency.symbol
+            it[currencyCharCode] = wallet.currency.charCode
+        } > 0
+    }
+
+    override suspend fun deleteWallet(id: Int): Boolean = dbQuery {
+        WalletDB.deleteWhere { PurchaseDB.id eq id } > 0
+    }
+}
+
+fun Application.walletRoutes(walletDAO: WalletDAO) {
+    routing {
+
+        post("/wallets") {
+            val wallet = call.receive<Wallet>()
+            val walletModel = walletDAO.addNewWallet(wallet)
+            try {
+                call.respond(HttpStatusCode.Created, walletModel!!)
+            } catch (e: Exception){
+                call.respond(HttpStatusCode.NotFound)
+            }
         }
-    }
-
-    // Update a city
-    suspend fun update(id: Int, wallet: Wallet) = withContext(Dispatchers.IO) {
-        val statement = connection.prepareStatement(UPDATE_WALLET)
-        statement.setLong(1, wallet.relevanceTime)
-        statement.setLong(2, wallet.dateCreated)
-        statement.setString(3, wallet.currency.id)
-        statement.setString(4, wallet.currency.title)
-        statement.setString(5, wallet.currency.symbol)
-        statement.setString(6, wallet.currency.charCode)
-        statement.setInt(7, id)
-        statement.executeUpdate()
-    }
-
-    // Delete a city
-    suspend fun delete(id: Int) = withContext(Dispatchers.IO) {
-        val statement = connection.prepareStatement(DELETE_WALLET)
-        statement.setInt(1, id)
-        statement.executeUpdate()
+        get("/wallets/{id}") {
+            val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
+            try {
+                val income = walletDAO.wallet(id)
+                call.respond(HttpStatusCode.OK, income!!)
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.NotFound)
+            }
+        }
+        put("/wallets/{id}") {
+            val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
+            val wallet = call.receive<Wallet>()
+            walletDAO.editWallet(id, wallet)
+            call.respond(HttpStatusCode.OK)
+        }
+        delete("/wallets/{id}") {
+            val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
+            walletDAO.deleteWallet(id)
+            call.respond(HttpStatusCode.OK)
+        }
     }
 }

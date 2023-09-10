@@ -1,16 +1,14 @@
-package ru.ermolnik.models.exposedb
+package ru.ermolnik.models
 
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.server.util.*
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import ru.ermolnik.models.exposedb.IncomeDB.id
-import ru.ermolnik.models.exposedb.PurchaseDB.categoryLimit
+import ru.ermolnik.models.PurchaseDB.categoryLimit
 import ru.ermolnik.plugins.dbQuery
 
 @Serializable
@@ -36,13 +34,6 @@ data class PurchaseCategory(
     val order: Int
 )
 
-@Serializable
-data class BudgetTag(
-    val id: String,
-    val title: String,
-    val categoryIds: List<String>
-)
-
 object PurchaseDB : Table() {
     val id = integer("id").autoIncrement()
     val categoryId = varchar("categoryId", 1024)
@@ -57,6 +48,7 @@ object PurchaseDB : Table() {
     val valueInMainCurrency = integer("valueInMainCurrency")
     val note = varchar("note", 1024)
     val date = long("date")
+    val purchaseId = integer("purchaseId")
 
     override val primaryKey = PrimaryKey(id)
 }
@@ -79,7 +71,7 @@ class PurchaseDAOImpl : PurchaseDAO {
             emoji = row[PurchaseDB.categoryEmoji],
             isSystem = row[PurchaseDB.categoryIsSystem],
             isVisible = row[PurchaseDB.categoryIsVisible],
-            limit = row[PurchaseDB.categoryLimit],
+            limit = row[categoryLimit],
             order = row[PurchaseDB.categoryOrder]
         ),
         accountId = row[PurchaseDB.accountId],

@@ -3,7 +3,6 @@ package ru.ermolnik
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
-import ru.ermolnik.models.exposedb.*
 import ru.ermolnik.plugins.*
 import ru.ermolnik.plugins.configureSerialization
 
@@ -17,8 +16,4 @@ fun Application.module() {
     configureSerialization()
     configureSecurity()
     configureRouting()
-
-    incomeRoutes(IncomeDAOImpl())
-    purchaseRoutes(PurchaseDAOImpl())
-    walletRoutes(WalletDAOImpl())
 }
