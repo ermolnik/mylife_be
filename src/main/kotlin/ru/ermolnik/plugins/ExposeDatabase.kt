@@ -6,7 +6,10 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
+import ru.ermolnik.models.BudgetTagDB
 import ru.ermolnik.models.IncomeDB
+import ru.ermolnik.models.PurchaseDB
+import ru.ermolnik.models.WalletDB
 
 fun Application.configureExposeDatabase() {
     val driverClassName = "org.h2.Driver"
@@ -14,6 +17,9 @@ fun Application.configureExposeDatabase() {
     val database = Database.connect(jdbcURL, driverClassName)
     transaction(database) {
         SchemaUtils.create(IncomeDB)
+        SchemaUtils.create(PurchaseDB)
+        SchemaUtils.create(WalletDB)
+        SchemaUtils.create(BudgetTagDB)
     }
 }
 

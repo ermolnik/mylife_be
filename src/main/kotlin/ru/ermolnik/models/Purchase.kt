@@ -20,7 +20,7 @@ data class Purchase(
     val note: String?,
     val date: Long,
     val accountId: String,
-    val tags: List<BudgetTag>
+    val purchaseId: Int
 )
 
 @Serializable
@@ -79,7 +79,7 @@ class PurchaseDAOImpl : PurchaseDAO {
         valueInMainCurrency = row[PurchaseDB.valueInMainCurrency],
         note = row[PurchaseDB.note],
         date = row[PurchaseDB.date],
-        tags = listOf()
+        purchaseId = row[PurchaseDB.purchaseId]
     )
 
     override suspend fun allPurchase(): List<Purchase> = dbQuery {
@@ -141,7 +141,7 @@ fun Application.purchaseRoutes(purchaseDAO: PurchaseDAO) {
             val purchaseModel = purchaseDAO.addNewPurchase(purchase)
             try {
                 call.respond(HttpStatusCode.Created, purchaseModel!!)
-            } catch (e: Exception){
+            } catch (e: Exception) {
                 call.respond(HttpStatusCode.NotFound)
             }
         }
