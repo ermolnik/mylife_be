@@ -10,16 +10,16 @@ data class BudgetTag(
     val categoryIds: List<String>
 )
 
-object BudgetTagDB : Table() {
-    val id = integer("id").autoIncrement()
-    val purchaseId = integer("purchaseId")
-        .uniqueIndex()
-        .references(PurchaseDB.purchaseId)
-    val title = varchar("title", 1024)
-    val date = long("date")
-
-    override val primaryKey = PrimaryKey(id)
-}
+//object BudgetTagDB : Table() {
+//    val id = integer("id").autoIncrement()
+//    val purchaseId = integer("purchaseId")
+//        .uniqueIndex()
+//        .references(PurchaseDB.purchaseId)
+//    val title = varchar("title", 1024)
+//    val date = long("date")
+//
+//    override val primaryKey = PrimaryKey(id)
+//}
 
 interface BudgetTagDAO {
     suspend fun allBudgetTags(): List<BudgetTag>
