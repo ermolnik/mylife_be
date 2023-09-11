@@ -6,7 +6,6 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
-import ru.ermolnik.models.BudgetTagDB
 import ru.ermolnik.models.IncomeDB
 import ru.ermolnik.models.PurchaseDB
 import ru.ermolnik.models.WalletDB
