@@ -19,7 +19,7 @@ fun Application.configureExposeDatabase() {
         SchemaUtils.create(IncomeDB)
         SchemaUtils.create(PurchaseDB)
         SchemaUtils.create(WalletDB)
-        SchemaUtils.create(BudgetTagDB)
+//        SchemaUtils.create(BudgetTagDB)
     }
 }
 
